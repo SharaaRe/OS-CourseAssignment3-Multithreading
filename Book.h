@@ -21,10 +21,13 @@ protected:
 
 
 public:
+    Book() = default;
     Book(std::map<std::string, std::string> fields);
     Book(std::vector<std::string> fields);
     void add_review(int rate, int number_of_likes);
-    float rate();
+    float rate() const;
+    // inline bool operator< (const Book& l, const Book& r){return r.rate() < l.rate() }
+    // inline bool operator> (const Book& l, const Book& r){ return  r.rate() < l.rate(); }
     friend std::ostream& operator<<(std::ostream& os, const Book& bk);
 };
 

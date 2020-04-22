@@ -19,8 +19,8 @@ void Book::add_review(int rate, int num) {
     reviews_likes_count += num;
 }
 
-float Book::rate(){
-    return (author_average_rating + (reviews_sum / reviews_likes_count)) / 10;
+float Book::rate() const{
+    return (author_average_rating + ((float)reviews_sum / reviews_likes_count)) / 10;
 }
 
 ostream& operator<<(ostream& os, const Book& bk) {
