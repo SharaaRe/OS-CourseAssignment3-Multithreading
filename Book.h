@@ -8,7 +8,7 @@
 
 class Book
 {
-private:
+protected:
     int id;
     std::string title;
     std::string genre_1;
@@ -19,11 +19,13 @@ private:
     int reviews_sum;
     int reviews_likes_count;
 
+
 public:
     Book(std::map<std::string, std::string> fields);
     Book(std::vector<std::string> fields);
     void add_review(int rate, int number_of_likes);
     float rate();
+    friend std::ostream& operator<<(std::ostream& os, const Book& bk);
 };
 
 
