@@ -1,7 +1,7 @@
 #include "Book.h"
-#include "parser.h"
 
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 Book::Book(vector<string> fields) {
@@ -19,11 +19,9 @@ void Book::add_review(int rate, int num) {
     reviews_likes_count += num;
 }
 
-float Book::rate() const{
-    return (author_average_rating + ((float)reviews_sum / reviews_likes_count)) / 10;
-}
 
 ostream& operator<<(ostream& os, const Book& bk) {
+    os << fixed << setprecision( 2 );
     os << "id: " << bk.id << endl;
     os << "Title: " << bk.title << endl;
     os << "Genres: " << bk.genre_1 << ", " << bk.genre_2 << endl;

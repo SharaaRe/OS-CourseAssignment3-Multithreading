@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+enum indexes{BOOK_ID, BOOK_TITLE, GENRE_1, GENRE_2, PAGES, AUTHOR_NAME, AUTHOR_AVERAGE_RATING};
+
 
 class Book
 {
@@ -25,11 +27,14 @@ public:
     Book(std::map<std::string, std::string> fields);
     Book(std::vector<std::string> fields);
     void add_review(int rate, int number_of_likes);
-    float rate() const;
-    // inline bool operator< (const Book& l, const Book& r){return r.rate() < l.rate() }
-    // inline bool operator> (const Book& l, const Book& r){ return  r.rate() < l.rate(); }
+    inline float rate() const;
     friend std::ostream& operator<<(std::ostream& os, const Book& bk);
 };
+
+
+inline float Book::rate() const{
+    return (author_average_rating + ((float)reviews_sum / reviews_likes_count)) / 10;
+}
 
 
 #endif
