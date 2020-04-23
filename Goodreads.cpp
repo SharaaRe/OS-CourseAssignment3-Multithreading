@@ -6,6 +6,8 @@
 #include <vector>
 #include <algorithm>
 
+
+
 #define NUMBER_OF_THREADS
 
 using namespace std;
@@ -57,21 +59,9 @@ Book Goodreads::find_fav_book(string genre) {
     parse_book_file(string(DIR).append(BOOKS_FILE), genre);
     add_reviews(string(DIR).append(REVIEWS_FILE));
 
-
-
     auto fav_book = max_element(books.begin(), books.end(), 
     [](const pair<int, Book>& b1, const pair<int, Book>& b2) {
         return b1.second.rate() < b2.second.rate(); });
 
     return fav_book->second;
-}
-
-
-void* Goodreads::hello() {
-    cout << "Hello from thread: "  << endl;
-    return 0;
-}
-
-void* Goodreads::hello_helper(void* gr) {
-    return ((Goodreads*)gr)->hello();
 }
