@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 
+#include "pthread.h"
 enum indexes{BOOK_ID, BOOK_TITLE, GENRE_1, GENRE_2, PAGES, AUTHOR_NAME, AUTHOR_AVERAGE_RATING};
 
 
@@ -29,6 +30,7 @@ public:
     void add_review(int rate, int number_of_likes);
     inline float rate() const;
     friend std::ostream& operator<<(std::ostream& os, const Book& bk);
+    pthread_mutex_t mutex;
 };
 
 

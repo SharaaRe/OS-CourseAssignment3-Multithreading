@@ -5,12 +5,23 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <ctime>
 
 
 
-#define NUMBER_OF_THREADS
+#define NUMBER_OF_THREADS 4
+pthread_mutex_t mutex_books;
+pthread_mutex_t mutex_books1;
 
 using namespace std;
+
+typedef struct tdata
+{
+    long tid;
+    Goodreads* gr;
+    const char* genre;
+}TData;
+
 
 
 
@@ -56,12 +67,85 @@ void Goodreads::add_reviews(string file) {
 
 
 Book Goodreads::find_fav_book(string genre) {
-    parse_book_file(string(DIR).append(BOOKS_FILE), genre);
-    add_reviews(string(DIR).append(REVIEWS_FILE));
+    vector<pthread_t> threads(NUMBER_OF_THREADS);
+    vector<TData> tds(NUMBER_OF_THREADS);
 
+    const clock_t begin_time = clock();
+
+    // for (long i = 0; i < NUMBER_OF_THREADS; i++) {
+    //     tds[i].genre = genre.c_str();
+    //     tds[i].gr = this;
+    //     tds[i].tid = i;
+    //     pthread_create(&threads[i], NULL, parse_book_, (void*)&tds[i]);
+    // }
+    //     for (long i = 0; i < NUMBER_OF_THREADS; i++) {
+    //     pthread_join(threads[i], NULL);
+    // }
+
+    parse_book_file(string(DIR).append(BOOKS_FILE), genre);
+    const clock_t parse_end = clock();
+    cout << float(parse_end - begin_time) / CLOCKS_PER_SEC << endl;
+
+    for (long i = 0; i < NUMBER_OF_THREADS; i++) {
+        tds[i].genre = genre.c_str();
+        tds[i].gr = this;
+        tds[i].tid = i;
+        pthread_create(&threads[i], NULL, add_reviews_, (void*)&tds[i]);
+    }
+        for (long i = 0; i < NUMBER_OF_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    // add_reviews(string(DIR).append(REVIEWS_FILE));
+    const clock_t add_end = clock();
+    cout << float(add_end - parse_end) / CLOCKS_PER_SEC << endl;
+    
     auto fav_book = max_element(books.begin(), books.end(), 
     [](const pair<int, Book>& b1, const pair<int, Book>& b2) {
         return b1.second.rate() < b2.second.rate(); });
 
     return fav_book->second;
+}
+
+void* Goodreads::parse_book_ (void* arg) {
+    auto td = (TData*)arg;
+    auto gr = td->gr;
+
+    fstream fs;
+    string line;
+    vector<string> book_data;
+    string filename = string(DIR) + "books_" + to_string(td->tid) + ".csv";
+    fs.open(filename);
+    getline(fs, line);
+    while (getline(fs, line))
+    {
+        book_data = split(line, ',');
+        if (book_data[GENRE_1] == td->genre || book_data[GENRE_2] == td->genre) {
+            pthread_mutex_lock (&mutex_books);
+            gr->books.insert(pair<int, Book> (stoi(book_data[BOOK_ID]), Book(book_data)));
+            pthread_mutex_unlock (&mutex_books);
+
+        }
+    }
+    fs.close();
+}
+
+void* Goodreads::add_reviews_(void* arg) {
+    fstream fs;
+    string line;
+    auto td = (TData*)arg;
+    auto gr = td->gr;
+    // cout << "add reviews thread: " << td->tid << endl;
+    string filename = string(DIR) + "reviews_" + to_string(td->tid) + ".csv";
+    fs.open(filename);
+    getline(fs, line);
+    auto columns_name = split(line, ',');
+    while (getline(fs, line))
+    {
+        auto review = split(line, ',');
+        if (gr->books.find(stoi(review[0])) != gr->books.end()) {
+            gr->books[stoi(review[0])].add_review(stoi(review[1]), stoi(review[2]));
+        }
+
+    }
+    fs.close();
 }

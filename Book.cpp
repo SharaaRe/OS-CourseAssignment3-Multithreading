@@ -15,8 +15,11 @@ Book::Book(vector<string> fields) {
 }
 
 void Book::add_review(int rate, int num) {
+    // pthread_mutex_lock(&mutex);
     reviews_sum += rate * num;
     reviews_likes_count += num;
+    // pthread_mutex_unlock(&mutex);
+
 }
 
 

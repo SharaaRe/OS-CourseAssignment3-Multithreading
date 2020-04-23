@@ -17,6 +17,8 @@ private:
     void add_reviews(std::string filename);
 
 public:
+    static void* parse_book_(void*);
+    static void* add_reviews_(void*);
     Book find_fav_book(std::string genre);
 };
 
