@@ -38,8 +38,6 @@ ostream& operator<<(ostream& os, const Book& bk) {
     os << "Number of Pages: " << bk.pages << endl;
     os << "Author: " << bk.author << endl;
     os << "Author Rating: " << bk.author_average_rating << endl;
-    os << "Sum Rating: " << bk.reviews_sum << endl;
-    os << "Sum Likes: " << bk.reviews_likes_count << endl;
 
     return os;
     

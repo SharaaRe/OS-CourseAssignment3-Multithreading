@@ -9,7 +9,7 @@
 
 
 
-#define NUMBER_OF_THREADS 2
+#define NUMBER_OF_THREADS 8
 pthread_mutex_t mutex_books;
 pthread_mutex_t mutex_books1;
 
@@ -72,17 +72,17 @@ void Goodreads::add_reviews(string file) {
 
 
 Book Goodreads::find_fav_book_parallel(string genre) {
+
     vector<pthread_t> threads(NUMBER_OF_THREADS);
     vector<TData> tds(NUMBER_OF_THREADS);
     parse_book_file(string(DIR).append(BOOKS_FILE), genre);
-
-
+    
     // start of parallel implementation
     for (long i = 0; i < NUMBER_OF_THREADS; i++) {
         tds[i].genre = genre.c_str();
         tds[i].gr = this;
         tds[i].tid = i;
-        pthread_create(&threads[i], NULL, add_reviews_, (void*)&tds[i]);
+        pthread_create(&threads[i], NULL, reviews_job, (void*)&tds[i]);
     }
         for (long i = 0; i < NUMBER_OF_THREADS; i++) {
         pthread_join(threads[i], NULL);
@@ -97,6 +97,7 @@ Book Goodreads::find_fav_book_parallel(string genre) {
 }
 
 Book Goodreads::find_fav_book_serie(string genre) {
+
     parse_book_file(string(DIR).append(BOOKS_FILE), genre);
     add_reviews(string(DIR).append(REVIEWS_FILE));
 
@@ -108,49 +109,57 @@ Book Goodreads::find_fav_book_serie(string genre) {
 }
 
 
-void* Goodreads::add_reviews_(void* arg) {
-    int start, end, length, count = 0;
-
-    fstream fs;
-    string line;
-
+void* Goodreads::reviews_job(void* arg) {
+ 
     auto td = (TData*)arg;
     auto gr = td->gr;
 
-    map <int, int[2]> reviews;
+    map<int, int[2]> reviews;
+    gr->read_reviews(td->tid, reviews);
+    gr->add_reviews_sum(reviews);
+
+}
+
+void Goodreads::read_reviews(int partition, map<int, int[2]>& reviews) {
+
+    int start, end, length, count = 0;
+    fstream fs;
+    string line;
     fs.open(string(DIR) + REVIEWS_FILE,
              fstream::in | fstream::out);
 
     fs.seekg (0, fs.end);
     length = fs.tellg();
     fs.seekg (0, fs.beg);
-    start = length / NUMBER_OF_THREADS * td->tid;
-    end = length / NUMBER_OF_THREADS * (td->tid + 1);
+    start = length / NUMBER_OF_THREADS * partition;
+    end = length / NUMBER_OF_THREADS * (partition + 1);
     fs.seekg(start);
     getline(fs, line);
-    
-    while (getline(fs, line))
-    {
+
+    while (getline(fs, line)) {
         auto review = split(line, ',');
-        if (gr->books.find(stoi(review[0])) != gr->books.end()) {
-            if (reviews.find(stoi(review[0])) == reviews.end()) {
-                reviews[stoi(review[0])][0] = 0;
-                reviews[stoi(review[0])][1] = 0;
-            }
+        if (books.find(stoi(review[0])) != books.end()) {
+
             reviews[stoi(review[0])][0] += (stoi(review[1]) * stoi(review[2]));
             reviews[stoi(review[0])][1] += stoi(review[2]); 
         }
+
         count++;
-        if (fs.tellg() > length / NUMBER_OF_THREADS * (td->tid + 1))
+
+        if (fs.tellg() > end)
             break;
     }
 
     fs.close();
-    // here we shoul add reviews we summed to the original collection by locking
+    
+}
+
+void Goodreads::add_reviews_sum(std::map<int, int[2]>& reviews) {
+   
     for (auto it = reviews.begin(); it != reviews.end(); it++ )
     {
         pthread_mutex_lock(&mutex_books);
-        gr->books[it->first].add_reviews_by_group(it->second[0], it->second[1]);
+        books[it->first].add_reviews_by_group(it->second[0], it->second[1]);
         pthread_mutex_unlock(&mutex_books);
     }
 }
