@@ -28,9 +28,10 @@ public:
     Book(std::map<std::string, std::string> fields);
     Book(std::vector<std::string> fields);
     void add_review(int rate, int number_of_likes);
+    void add_reviews_by_group(int rate, int number_of_likes);
+
     inline float rate() const;
     friend std::ostream& operator<<(std::ostream& os, const Book& bk);
-    pthread_mutex_t mutex;
 };
 
 

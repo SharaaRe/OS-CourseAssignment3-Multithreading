@@ -12,14 +12,21 @@ Book::Book(vector<string> fields) {
     pages = stoi(fields[PAGES]);
     author = fields[AUTHOR_NAME];
     author_average_rating = stof(fields[AUTHOR_AVERAGE_RATING]);
+    reviews_sum = 0;
+    reviews_likes_count = 0;
 }
 
 void Book::add_review(int rate, int num) {
     // pthread_mutex_lock(&mutex);
-    reviews_sum += rate * num;
+    reviews_sum += (rate * num);
     reviews_likes_count += num;
     // pthread_mutex_unlock(&mutex);
 
+}
+
+void Book::add_reviews_by_group(int rate, int num) {
+    reviews_sum += rate;
+    reviews_likes_count += num;
 }
 
 
@@ -31,6 +38,8 @@ ostream& operator<<(ostream& os, const Book& bk) {
     os << "Number of Pages: " << bk.pages << endl;
     os << "Author: " << bk.author << endl;
     os << "Author Rating: " << bk.author_average_rating << endl;
+    os << "Sum Rating: " << bk.reviews_sum << endl;
+    os << "Sum Likes: " << bk.reviews_likes_count << endl;
 
     return os;
     
