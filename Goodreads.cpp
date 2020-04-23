@@ -57,12 +57,20 @@ void Goodreads::add_reviews(string file) {
     fs.open(file);
     getline(fs, line);
     auto columns_name = split(line, ',');
+    int count = 0;
+    const clock_t start = clock();
+
     while (getline(fs, line))
     {
         auto review = split(line, ',');
         if (books.find(stoi(review[0])) != books.end())
             books[stoi(review[0])].add_review(stoi(review[1]), stoi(review[2]));
+        
+        count++;
     }
+    const clock_t add_end = clock();
+    cout << "Single Thread Add Review Time" << float(add_end - start) / CLOCKS_PER_SEC << endl;
+
 }
 
 
@@ -71,16 +79,6 @@ Book Goodreads::find_fav_book(string genre) {
     vector<TData> tds(NUMBER_OF_THREADS);
 
     const clock_t begin_time = clock();
-
-    // for (long i = 0; i < NUMBER_OF_THREADS; i++) {
-    //     tds[i].genre = genre.c_str();
-    //     tds[i].gr = this;
-    //     tds[i].tid = i;
-    //     pthread_create(&threads[i], NULL, parse_book_, (void*)&tds[i]);
-    // }
-    //     for (long i = 0; i < NUMBER_OF_THREADS; i++) {
-    //     pthread_join(threads[i], NULL);
-    // }
 
     parse_book_file(string(DIR).append(BOOKS_FILE), genre);
     const clock_t parse_end = clock();
@@ -106,46 +104,44 @@ Book Goodreads::find_fav_book(string genre) {
     return fav_book->second;
 }
 
-void* Goodreads::parse_book_ (void* arg) {
-    auto td = (TData*)arg;
-    auto gr = td->gr;
-
-    fstream fs;
-    string line;
-    vector<string> book_data;
-    string filename = string(DIR) + "books_" + to_string(td->tid) + ".csv";
-    fs.open(filename);
-    getline(fs, line);
-    while (getline(fs, line))
-    {
-        book_data = split(line, ',');
-        if (book_data[GENRE_1] == td->genre || book_data[GENRE_2] == td->genre) {
-            pthread_mutex_lock (&mutex_books);
-            gr->books.insert(pair<int, Book> (stoi(book_data[BOOK_ID]), Book(book_data)));
-            pthread_mutex_unlock (&mutex_books);
-
-        }
-    }
-    fs.close();
-}
 
 void* Goodreads::add_reviews_(void* arg) {
+
     fstream fs;
     string line;
     auto td = (TData*)arg;
     auto gr = td->gr;
-    // cout << "add reviews thread: " << td->tid << endl;
+
+    map <int, int[2]> reviews;
     string filename = string(DIR) + "reviews_" + to_string(td->tid) + ".csv";
     fs.open(filename);
     getline(fs, line);
     auto columns_name = split(line, ',');
+    const clock_t start = clock();
+    int count = 0;
     while (getline(fs, line))
     {
         auto review = split(line, ',');
         if (gr->books.find(stoi(review[0])) != gr->books.end()) {
-            gr->books[stoi(review[0])].add_review(stoi(review[1]), stoi(review[2]));
+            reviews[stoi(review[0])][0] += (stoi(review[1]) * stoi(review[2]));
+            reviews[stoi(review[0])][1] += stoi(review[2]); 
         }
-
+        count++;
     }
     fs.close();
+    const clock_t end = clock();
+    for (auto it = reviews.begin(); it != reviews.end(); it++ )
+    {
+        pthread_mutex_lock(&mutex_books);
+        gr->books[it->first].add_review(it->second[0], it->second[1]);
+        pthread_mutex_unlock(&mutex_books);
+    }
+    const clock_t end_end = clock();
+    string res;
+    res = to_string(float(end - start) / CLOCKS_PER_SEC) +
+         "-" + 
+         to_string(float(end_end - end) / CLOCKS_PER_SEC) +
+          "-" + to_string(count) +"\n";
+    cout << res ;
+
 }
