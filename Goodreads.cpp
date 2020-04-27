@@ -132,7 +132,8 @@ void Goodreads::read_reviews(int partition, map<int, int[2]>& reviews) {
     length = fs.tellg();
     fs.seekg (0, fs.beg);
     start = length / NUMBER_OF_THREADS * partition;
-    end = length / NUMBER_OF_THREADS * (partition + 1);
+    end = partition == NUMBER_OF_THREADS - 1? length 
+            : length / NUMBER_OF_THREADS * (partition + 1);
     fs.seekg(start);
     getline(fs, line);
 
@@ -151,7 +152,6 @@ void Goodreads::read_reviews(int partition, map<int, int[2]>& reviews) {
     }
 
     fs.close();
-    
 }
 
 void Goodreads::add_reviews_sum(std::map<int, int[2]>& reviews) {

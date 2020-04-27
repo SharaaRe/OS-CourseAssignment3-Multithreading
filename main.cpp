@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
         exit(EXIT_FAILURE);
     } 
     string genre(argv[1]);
-    Book b = Goodreads().find_fav_book_parallel(genre);
+    Book b = Goodreads().find_fav_book_serie(genre);
     cout << b;
 
 
