@@ -19,10 +19,9 @@ private:
     void add_reviews_sum(std::map<int, int[2]>& reviews);
 
 public:
-    static void* parse_book_(void*);
     static void* reviews_job(void*);
-    Book find_fav_book_serie(std::string genre);
-    Book find_fav_book_parallel(std::string genre);
+    Book find_fav_book(std::string genre, bool parallel = true);
+
 
 };
 

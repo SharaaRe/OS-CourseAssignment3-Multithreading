@@ -13,13 +13,14 @@
 pthread_mutex_t mutex_books;
 pthread_mutex_t mutex_books1;
 
+int reviews_count;
+
 using namespace std;
 
 typedef struct tdata
 {
     long tid;
     Goodreads* gr;
-    const char* genre;
 }TData;
 
 
@@ -71,35 +72,25 @@ void Goodreads::add_reviews(string file) {
 }
 
 
-Book Goodreads::find_fav_book_parallel(string genre) {
+Book Goodreads::find_fav_book(string genre, bool parallel) {
 
     vector<pthread_t> threads(NUMBER_OF_THREADS);
     vector<TData> tds(NUMBER_OF_THREADS);
     parse_book_file(string(DIR).append(BOOKS_FILE), genre);
     
-    // start of parallel implementation
-    for (long i = 0; i < NUMBER_OF_THREADS; i++) {
-        tds[i].genre = genre.c_str();
-        tds[i].gr = this;
-        tds[i].tid = i;
-        pthread_create(&threads[i], NULL, reviews_job, (void*)&tds[i]);
-    }
+
+    if (parallel) {
         for (long i = 0; i < NUMBER_OF_THREADS; i++) {
-        pthread_join(threads[i], NULL);
+            tds[i].gr = this;
+            tds[i].tid = i;
+            pthread_create(&threads[i], NULL, reviews_job, (void*)&tds[i]);
+        }
+        for (long i = 0; i < NUMBER_OF_THREADS; i++) {
+            pthread_join(threads[i], NULL);
+        }
+    } else {
+        add_reviews(string(DIR).append(REVIEWS_FILE));
     }
-    // end of parallel implementation
-
-    auto fav_book = max_element(books.begin(), books.end(), 
-    [](const pair<int, Book>& b1, const pair<int, Book>& b2) {
-        return b1.second.rate() < b2.second.rate(); });
-
-    return fav_book->second;
-}
-
-Book Goodreads::find_fav_book_serie(string genre) {
-
-    parse_book_file(string(DIR).append(BOOKS_FILE), genre);
-    add_reviews(string(DIR).append(REVIEWS_FILE));
 
     auto fav_book = max_element(books.begin(), books.end(), 
     [](const pair<int, Book>& b1, const pair<int, Book>& b2) {
@@ -153,6 +144,7 @@ void Goodreads::read_reviews(int partition, map<int, int[2]>& reviews) {
 
     fs.close();
 }
+
 
 void Goodreads::add_reviews_sum(std::map<int, int[2]>& reviews) {
    
